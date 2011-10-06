@@ -51,12 +51,6 @@ class Scamp
       self.instance_eval &@action
     end
     
-    private
-    
-    def command_list
-      bot.command_list
-    end
-    
     def say(msg, room_id_or_name = room_id)
       bot.say(msg, room_id_or_name)
     end
@@ -67,6 +61,12 @@ class Scamp
 
     def play(sound, room_id_or_name = room_id)
       bot.play(sound, room_id_or_name)
+    end
+    
+    private
+    
+    def command_list
+      bot.command_list
     end
   end
 end
