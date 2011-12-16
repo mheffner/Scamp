@@ -24,6 +24,11 @@ class Scamp
       user_cache[user_id] != nil
     end
 
+    def update_user_cache_with(user_id, data)
+      logger.debug "Updated user cache for #{data['name']}"
+      user_cache[user_id] = data
+    end
+
   private
 
     def fetch_data_for(user_id)
@@ -41,11 +46,6 @@ class Scamp
       http.errback do
         logger.error "Couldn't connect to #{url} to fetch user data for user #{user_id}"
       end
-    end
-    
-    def update_user_cache_with(user_id, data)
-      logger.debug "Updated user cache for #{data['name']}"
-      user_cache[user_id] = data
     end
   end
 end

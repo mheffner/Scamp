@@ -1,5 +1,11 @@
 class Scamp
   module Connection
+    def http_req(url, verb, opts, headers = {})
+      EventMachine::HttpRequest.new(url, opts).
+        send(verb.to_sym,
+             headers.merge(:head => {'authorization' => [api_key, 'X']}))
+    end
+
     private
     
     def connect(api_key, room_list, &blk)
@@ -27,6 +33,5 @@ class Scamp
         
       end
     end
-      
   end
 end

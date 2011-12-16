@@ -24,7 +24,6 @@ class Scamp
 
     def join_room(id)
       connect_to_room(id) do
-        logger.info "Joined room #{id} successfully"
         fetch_room_data(id)
         stream(id)
       end
@@ -60,25 +59,6 @@ class Scamp
       }
     end
 
-    def fetch_room_data(room_id)
-      url = "https://#{subdomain}.campfirenow.com/room/#{room_id}.json"
-      http = EventMachine::HttpRequest.new(url).get :head => {'authorization' => [api_key, 'X']}
-      http.errback { logger.error "Couldn't connect to #{url} to fetch room data for room #{room_id}" }
-      http.callback {
-        if http.response_header.status == 200
-          logger.debug "Fetched room data for #{room_id}"
-          room = Yajl::Parser.parse(http.response)['room']
-          room_cache[room["id"]] = room
-
-          room['users'].each do |u|
-            update_user_cache_with(u["id"], u)
-          end
-        else
-          logger.error "Couldn't fetch room data for room #{room_id} with url #{url}, http response from API was #{http.response_header.status}"
-        end
-      }
-    end
-
     def connect_to_room(room_id)
       logger.info "Connecting to room #{room_id}"
       url = "https://#{subdomain}.campfirenow.com/room/#{room_id}/join.json"
@@ -86,20 +66,9 @@ class Scamp
       
       http.errback { logger.error "Error joining room: #{room_id}" }
       http.callback {
-        yield if block_given?
+        logger.info "Joined room #{room_id} successfully"
+        Room.new(self, room_id, method(:process_message))
       }
-    end
-
-    def stream(room_id)
-      json_parser = Yajl::Parser.new :symbolize_keys => true
-      json_parser.on_parse_complete = method(:process_message)
-      
-      url = "https://streaming.campfirenow.com/room/#{room_id}/live.json"
-      # Timeout per https://github.com/igrigorik/em-http-request/wiki/Redirects-and-Timeouts
-      http = EventMachine::HttpRequest.new(url, :connect_timeout => 20, :inactivity_timeout => 0).get :head => {'authorization' => [api_key, 'X']}
-      http.errback { logger.error "Couldn't stream room #{room_id} at url #{url}" }
-      http.callback { logger.info "Disconnected from #{url}"; rooms_to_join << room_id}
-      http.stream {|chunk| json_parser << chunk }
     end
 
     def room_id_from_room_name(room_name)

@@ -6,6 +6,7 @@ require "logger"
 require "scamp/version"
 require 'scamp/connection'
 require 'scamp/rooms'
+require 'scamp/room'
 require 'scamp/users'
 require 'scamp/matcher'
 require 'scamp/action'
