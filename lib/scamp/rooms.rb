@@ -7,17 +7,6 @@ class Scamp
 
     def upload
     end
-    
-    def join(room_id)
-      logger.info "Joining room #{room_id}"
-      url = "https://#{subdomain}.campfirenow.com/room/#{room_id}/join.json"
-      http = EventMachine::HttpRequest.new(url).post :head => {'Content-Type' => 'application/json', 'authorization' => [api_key, 'X']}
-      
-      http.errback { logger.error "Error joining room: #{room_id}" }
-      http.callback {
-        yield if block_given?
-      }
-    end
 
     def room_id(room_id_or_name)
       if room_id_or_name.is_a? Integer
@@ -31,6 +20,14 @@ class Scamp
       data = room_cache_data(room_id)
       return data["name"] if data
       room_id.to_s
+    end
+
+    def join_room(id)
+      connect_to_room(id) do
+        logger.info "Joined room #{id} successfully"
+        fetch_room_data(id)
+        stream(id)
+      end
     end
     
     private
@@ -81,15 +78,18 @@ class Scamp
         end
       }
     end
-    
-    def join_and_stream(id)
-      join(id) do
-        logger.info "Joined room #{id} successfully"
-        fetch_room_data(id)
-        stream(id)
-      end
+
+    def connect_to_room(room_id)
+      logger.info "Connecting to room #{room_id}"
+      url = "https://#{subdomain}.campfirenow.com/room/#{room_id}/join.json"
+      http = EventMachine::HttpRequest.new(url).post :head => {'Content-Type' => 'application/json', 'authorization' => [api_key, 'X']}
+      
+      http.errback { logger.error "Error joining room: #{room_id}" }
+      http.callback {
+        yield if block_given?
+      }
     end
-    
+
     def stream(room_id)
       json_parser = Yajl::Parser.new :symbolize_keys => true
       json_parser.on_parse_complete = method(:process_message)

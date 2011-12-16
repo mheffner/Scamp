@@ -8,7 +8,7 @@ class Scamp
         # Check for rooms to join, and join them
         EventMachine::add_periodic_timer(5) do
           while id = @rooms_to_join.pop
-            join_and_stream(id)
+            join_room(id)
           end
         end
         
